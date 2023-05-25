@@ -1,42 +1,65 @@
 package ru.geekbrain.android.secondmeter.view
 
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import ru.geekbrain.android.secondmeter.R
+import ru.geekbrain.android.secondmeter.databinding.ActivityMainBinding
+import ru.geekbrain.android.secondmeter.viewmodel.StopMeterViewModelFactory
 
 class MainActivity : AppCompatActivity() {
 
+    lateinit var binding: ActivityMainBinding
 
+    private val secundometers = 2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        val viewModel:StopMeterViewModel by viewModels()
+
+        val viewModel: StopMeterViewModel by viewModels { StopMeterViewModelFactory(secundometers) }
 
         CoroutineScope(Dispatchers.Main + SupervisorJob()).launch {
-            viewModel.stopwatchListOrchestrator.ticker.collect{
-                findViewById<TextView>(R.id.text_time).text = it
+            launch {
+                viewModel.stopwatchListOrchestrator.tickerList[0].collect() {
+                    binding.textTime1.text = viewModel.stopwatchListOrchestrator.tickerList[0].value
+                }
+            }
+
+            launch {
+                viewModel.stopwatchListOrchestrator.tickerList[1].collect {
+                    binding.textTime2.text = it
+                }
             }
         }
 
-        findViewById<Button>(R.id.button_start).setOnClickListener{
-            viewModel.stopwatchListOrchestrator.start()
+        binding.buttonStart1.setOnClickListener {
+            viewModel.stopwatchListOrchestrator.start(0)
         }
 
-        findViewById<Button>(R.id.button_pause).setOnClickListener{
-            viewModel.stopwatchListOrchestrator.pause()
+        binding.buttonPause1.setOnClickListener {
+            viewModel.stopwatchListOrchestrator.pause(0)
         }
 
-        findViewById<Button>(R.id.button_stop).setOnClickListener{
-            viewModel.stopwatchListOrchestrator.stop()
+        binding.buttonStop1.setOnClickListener {
+            viewModel.stopwatchListOrchestrator.stop(0)
+        }
+
+        binding.buttonStart2.setOnClickListener {
+            viewModel.stopwatchListOrchestrator.start(1)
+        }
+
+        binding.buttonPause2.setOnClickListener {
+            viewModel.stopwatchListOrchestrator.pause(1)
+        }
+
+        binding.buttonStop2.setOnClickListener {
+            viewModel.stopwatchListOrchestrator.stop(1)
         }
     }
 }

@@ -2,50 +2,59 @@ package ru.geekbrain.android.secondmeter.domain
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class StopwatchListOrchestrator(
-    private val stopWatchStateHolder: StopWatchStateHolder,
+    private val stopWatchStateHolderList: List<StopWatchStateHolder>,
     private val scope: CoroutineScope
 ) {
-    private var job: Job? = null
-    private val mutableTicker = MutableStateFlow(stopWatchStateHolder.getStringTimePresentation())
-    val ticker = mutableTicker
+    private var jobList = arrayOfNulls<Job>(stopWatchStateHolderList.size)
 
-    fun start(){
-        if (job == null) {
-            startJob()
+    private val mutableTickerList = stopWatchStateHolderList.map{
+        MutableStateFlow(it.getStringTimePresentation())
+    }
+
+    val tickerList = mutableTickerList as List<StateFlow<String>>
+
+    fun start(jobNum : Int){
+        if (jobNum >=0 && jobNum< jobList.size ) {
+            if (jobList[jobNum] == null) {
+                startJob(jobNum)
+            }
+            stopWatchStateHolderList[jobNum].start()
         }
-        stopWatchStateHolder.start()
     }
 
-    fun pause(){
-        stopWatchStateHolder.pause()
-        stopJob()
+    fun pause(jobNum : Int){
+        stopWatchStateHolderList[jobNum].pause()
+        stopJob(jobNum)
     }
 
-    fun stop(){
-        clearValue()
-        stopWatchStateHolder.stop()
-        stopJob()
+    fun stop(jobNum : Int){
+        clearValue(jobNum)
+        stopWatchStateHolderList[jobNum].stop()
+        stopJob(jobNum)
     }
 
 
-    private fun startJob() {
+    private fun startJob(jobNum: Int) {
         scope.launch {
             while (isActive){
-                mutableTicker.value = stopWatchStateHolder.getStringTimePresentation()
-                delay(20)
+                mutableTickerList[jobNum].value =
+                    stopWatchStateHolderList[jobNum].getStringTimePresentation()
+                delay(50)
             }
         }
     }
 
-    private fun stopJob() {
-        scope.coroutineContext.cancelChildren()
-        job = null
+    private fun stopJob(jobNum: Int) {
+        jobList[jobNum] = null
+
     }
 
-    private fun clearValue() {
-        mutableTicker.value = stopWatchStateHolder.getStringTimePresentation()
+    private fun clearValue(jobNum: Int) {
+        mutableTickerList[jobNum].value =
+            stopWatchStateHolderList[jobNum].getStringTimePresentation()
     }
 
 }

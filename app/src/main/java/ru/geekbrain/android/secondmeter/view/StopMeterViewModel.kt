@@ -7,7 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import ru.geekbrain.android.secondmeter.domain.*
 import ru.geekbrain.android.secondmeter.model.TimeStampProvider
 
-class StopMeterViewModel: ViewModel() {
+class StopMeterViewModel(private val amountOfStopWatchers: Int) : ViewModel() {
 
 
     private val timeStampProvider = object : TimeStampProvider {
@@ -15,20 +15,25 @@ class StopMeterViewModel: ViewModel() {
             System.currentTimeMillis()
     }
 
+
+
+    private val stopWatchStateHolderList= List<StopWatchStateHolder> (amountOfStopWatchers){
+            StopWatchStateHolder(
+                StopWatchStateCalculator(
+                    this.timeStampProvider,
+                    ElapsedTimeStateCalculator(this.timeStampProvider)
+                ),
+                ElapsedTimeStateCalculator(this.timeStampProvider),
+                TimeStampMillisecondsFormatter()
+            )
+        }
+
     val stopwatchListOrchestrator = StopwatchListOrchestrator(
-        StopWatchStateHolder(
-            StopWatchStateCalculator(
-                this.timeStampProvider,
-                ElapsedTimeStateCalculator(this.timeStampProvider)
-            ),
-            ElapsedTimeStateCalculator(timeStampProvider),
-            TimeStampMillisecondsFormatter()
-        ),
+        stopWatchStateHolderList,
         CoroutineScope(
             Dispatchers.Main + SupervisorJob()
         )
     )
-
 
 
 }
